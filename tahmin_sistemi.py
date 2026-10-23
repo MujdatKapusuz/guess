@@ -3,6 +3,10 @@ import requests
 import pandas as pd
 from datetime import datetime, timedelta
 
+print("==========================================================")
+print(f"RAPOR GÜNCELLEME ZAMANI: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+print("==========================================================")
+
 # 1. API Ayarları ve Veri Çekme
 API_TOKEN = os.getenv("FOOTBALL_DATA_TOKEN")  # GitHub Secrets'tan güvenli bir şekilde alınacak
 HEADERS = {"X-Auth-Token": API_TOKEN}
