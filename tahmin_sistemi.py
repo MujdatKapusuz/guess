@@ -67,7 +67,7 @@ def oruntuleri_filtrele(df):
     tum_takimlar = set(df['takim'].unique()).union(set(df['rakip'].unique()))
     
     for takim in tum_takimlar:
-        takim_maclari = df[(df['takim'] == takim) | (df['rakip'] ==? takim)].tail(2)
+        takim_maclari = df[(df['takim'] == takim) | (df['rakip'] == takim)].tail(2)
         
         if len(takim_maclari) == 2:
             uygun_mac_sayisi = 0
