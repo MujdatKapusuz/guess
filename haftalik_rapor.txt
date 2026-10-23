@@ -1,0 +1,10 @@
+Football-Data.org API'sinden güncel maçlar çekiliyor...
+Bağlantı hatası: HTTPSConnectionPool(host='football-data.org', port=443): Max retries exceeded with url: /matches?dateFrom=2026-10-16&dateTo=2026-10-23 (Caused by SSLError(SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'football-data.org'. (_ssl.c:1017)")))
+
+=== CUMA ÖĞLEN TAHMİN VE ÖRÜNTÜ RAPORU ===
+1/2 veya 2/1 Biten Maç Sayısı: 1
+7+ Gol Biten Maç Sayısı: 0
+3-3 Biten Maç Sayısı: 1
+Son 2 Maçında Kırmızı Kartlı Seri Yakalayan Takımlar: []
+==========================================
+
