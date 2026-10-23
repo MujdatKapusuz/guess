@@ -1,13 +1,52 @@
 ==========================================================
-RAPOR GÜNCELLEME ZAMANI: 2026-10-23 11:02:33
+RAPOR GÜNCELLEME ZAMANI: 2026-10-23 11:20:29
 ==========================================================
+Algılanan çift uzantılı sezon dosyaları otomatik birleştiriliyor: ['sezon23_24.csv.csv', 'sezon24_25.csv.csv', 'sezon25_26.csv.csv']
 Football-Data.org API'sinden güncel maçlar çekiliyor...
-Bağlantı hatası: HTTPSConnectionPool(host='football-data.org', port=443): Max retries exceeded with url: /matches?dateFrom=2026-10-16&dateTo=2026-10-23 (Caused by SSLError(SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'football-data.org'. (_ssl.c:1017)")))
 
 === CUMA ÖĞLEN TAHMİN VE ÖRÜNTÜ RAPORU ===
-1/2 veya 2/1 Biten Maç Sayısı: 1
-7+ Gol Biten Maç Sayısı: 0
-3-3 Biten Maç Sayısı: 1
-Son 2 Maçında Kırmızı Kartlı Seri Yakalayan Takımlar: []
+
+ 1/2 veya 2/1 Biten Ters Maçlar (60 adet):
+ -> 16/09/2023 | Konyaspor - Rizespor (1-0 / 1-2)
+ -> 25/09/2023 | Hatayspor - Trabzonspor (0-1 / 3-2)
+ -> 30/09/2023 | Istanbulspor - Antalyaspor (1-0 / 1-2)
+ -> 04/11/2023 | Samsunspor - Hatayspor (0-1 / 2-1)
+ -> 05/11/2023 | Antalyaspor - Besiktas (0-1 / 3-2)
+ -> 08/11/2023 | Samsunspor - Istanbulspor (0-1 / 2-1)
+ -> 26/11/2023 | Fenerbahce - Karagumruk (0-1 / 2-1)
+ -> 28/01/2024 | Konyaspor - Buyuksehyr (2-0 / 2-3)
+ -> 29/01/2024 | Galatasaray - Gaziantep (0-1 / 2-1)
+ -> 29/01/2024 | Trabzonspor - Kasimpasa (1-0 / 2-3)
+
+ 7+ Gol Biten Maçlar (24 adet):
+ -> 11/11/2023 | Kasimpasa 3-4 Kayserispor
+ -> 20/12/2023 | Kayserispor 3-4 Fenerbahce
+ -> 10/01/2024 | Fenerbahce 7-1 Konyaspor
+ -> 08/03/2024 | Galatasaray 6-2 Rizespor
+ -> 17/03/2024 | Kasimpasa 3-4 Galatasaray
+ -> 05/05/2024 | Galatasaray 6-1 Sivasspor
+ -> 12/05/2024 | Ad. Demirspor 1-6 Gaziantep
+ -> 26/05/2024 | Ad. Demirspor 2-6 Buyuksehyr
+ -> 01/09/2024 | Buyuksehyr 5-2 Antalyaspor
+ -> 28/09/2024 | Samsunspor 4-3 Goztep
+
+ 3-3 Biten Maçlar (13 adet):
+ -> 03/09/2023 | Hatayspor vs Ad. Demirspor
+ -> 17/09/2023 | Alanyaspor vs Kasimpasa
+ -> 05/11/2023 | Buyuksehyr vs Ankaragucu
+ -> 27/11/2023 | Sivasspor vs Trabzonspor
+ -> 01/12/2023 | Hatayspor vs Antalyaspor
+ -> 18/02/2024 | Alanyaspor vs Ad. Demirspor
+ -> 28/09/2024 | Galatasaray vs Kasimpasa
+ -> 19/01/2025 | Konyaspor vs Kasimpasa
+ -> 02/03/2025 | Kasimpasa vs Galatasaray
+ -> 20/04/2025 | Fenerbahce vs Kayserispor
+
+ Son 2 Maçında Kırmızı Kartlı Seri Yakalayan Takımlar:
+ -> Bulunamadı.
+
+ YAPAY ZEKA GELECEK MAÇ MODEL TESTİ
+Maç Simülasyonu: Trabzonspor vs Genclerbirligi
+Tahmin simülasyon hatası: unsupported format string passed to numpy.ndarray.__format__
 ==========================================
 
