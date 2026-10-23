@@ -1,4 +1,6 @@
 import os
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 import requests
 import pandas as pd
 from datetime import datetime, timedelta
@@ -24,7 +26,7 @@ def guncel_verileri_cek():
         # Örnek: Son 7 günün maçlarını çek
         tarih_beri = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
         url = f"{BASE_URL}/matches?dateFrom={tarih_beri}&dateTo={datetime.now().strftime('%Y-%m-%d')}"
-        response = requests.get(url, headers=HEADERS)
+        response = requests.get(url, headers=HEADERS, verify=False)
         if response.status_code == 200:
             print("Son haftanın maç verileri başarıyla çekildi.")
             return response.json()
