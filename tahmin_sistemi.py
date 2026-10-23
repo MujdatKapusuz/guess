@@ -129,14 +129,14 @@ def yapay_zeka_ve_oruntu_motoru(df):
     print("==========================================\n")
 
 if __name__ == "__main__":
-    dosyalar = ["sezon22_23.csv", "sezon23_24.csv", "sezon24_25.csv"]
+    # Çift uzantılı yeni dosya isimleriniz sisteme tanımlandı
+    dosyalar = ["sezon23_24.csv.csv", "sezon24_25.csv.csv", "sezon25_26.csv.csv"]
     mevcut_dosyalar = [f for f in dosyalar if os.path.exists(f)]
     
     if mevcut_dosyalar:
-        print(f"Algılanan sezon dosyaları otomatik birleştiriliyor: {mevcut_dosyalar}")
-        # Tüm dosyaları oku ve alt alta yapıştır
+        print(f"Algılanan çift uzantılı sezon dosyaları otomatik birleştiriliyor: {mevcut_dosyalar}")
         bilesik_df = pd.concat([pd.read_csv(f) for f in mevcut_dosyalar], ignore_index=True)
         guncel_verileri_cek()
         yapay_zeka_ve_oruntu_motoru(bilesik_df)
     else:
-        print("Lütfen depoya en az bir adet sezon dosyası (Örn: 'sezon24_25.csv') yükleyin.")
+        print("Yüklenen sezon dosyaları algılanamadı. Lütfen dosya isimlerini kontrol edin.")
