@@ -9,7 +9,6 @@ from sklearn.preprocessing import LabelEncoder
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-# Zaman Damgası (Her cuma Actions diff yakalasın diye)
 print("==========================================================")
 print(f"RAPOR GÜNCELLEME ZAMANI: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 print("==========================================================")
@@ -33,10 +32,6 @@ def guncel_verileri_cek():
         return None
 
 def yapay_zeka_ve_oruntu_motoru(df):
-    # Football-Data.co.uk formatındaki kolonları standartlaştırıyoruz
-    # Orijinal kolonlar: Date, HomeTeam, AwayTeam, FTHG, FTAG, HTHG, HTAG, HR, AR
-    
-    # Eksik kolon kontrolü ve temizliği
     df = df.dropna(subset=['Date', 'HomeTeam', 'AwayTeam', 'FTHG', 'FTAG'])
     
     df['tarih'] = pd.to_datetime(df['Date'], errors='coerce', dayfirst=True)
@@ -45,11 +40,9 @@ def yapay_zeka_ve_oruntu_motoru(df):
     df['ev_gol'] = df['FTHG'].astype(int)
     df['dep_gol'] = df['FTAG'].astype(int)
     
-    # Kırmızı Kartları birleştir (HR: Home Red, AR: Away Red)
     df['kirmizi_kart_sayisi'] = df['HR'].fillna(0).astype(int) + df['AR'].fillna(0).astype(int)
     df['toplam_gol'] = df['ev_gol'] + df['dep_gol']
     
-    # 1. ÖRÜNTÜ TARAMALARI (İstediğiniz Özel Kurallar)
     uyn_12_21 = []
     uyn_7plus = []
     uyn_33 = []
@@ -58,7 +51,6 @@ def yapay_zeka_ve_oruntu_motoru(df):
     df = df.sort_values(by='tarih')
     
     for idx, row in df.iterrows():
-        # 1/2 veya 2/1 kontrolü (HTHG ve HTAG kolonları varsa)
         if 'HTHG' in df.columns and 'HTAG' in df.columns:
             try:
                 iy_ev = int(row['HTHG'])
@@ -70,15 +62,12 @@ def yapay_zeka_ve_oruntu_motoru(df):
             except:
                 pass
                 
-        # 7+ Gol Kontrolü
         if row['toplam_gol'] >= 7:
             uyn_7plus.append(f"{row['Date']} | {row['takim']} {row['ev_gol']}-{row['dep_gol']} {row['rakip']}")
             
-        # 3-3 Skor Kontrolü
         if row['ev_gol'] == 3 and row['dep_gol'] == 3:
             uyn_33.append(f"{row['Date']} | {row['takim']} vs {row['rakip']}")
             
-    # Takım Bazlı Son 2 Maç Kırmızı Kart + Kritik Skor Serisi
     tum_takimlar = set(df['takim'].unique()).union(set(df['rakip'].unique()))
     for takim in tum_takimlar:
         takim_maclari = df[(df['takim'] == takim) | (df['rakip'] == takim)].tail(2)
@@ -97,7 +86,6 @@ def yapay_zeka_ve_oruntu_motoru(df):
             if uygun_mac_sayisi == 2:
                 uyn_ozel_kirmizi.append(takim)
 
-    # 2. YAPAY ZEKA TAHMİN MOTORU (Random Forest)
     df['mac_sonucu'] = np.where(df['ev_gol'] > df['dep_gol'], '1', 
                         np.where(df['ev_gol'] == df['dep_gol'], 'X', '2'))
     
@@ -115,24 +103,23 @@ def yapay_zeka_ve_oruntu_motoru(df):
     model = RandomForestClassifier(n_estimators=100, random_state=42)
     model.fit(X, y)
     
-    # ÇIKTI VE RAPORLAMA
     print("\n=== CUMA ÖĞLEN TAHMİN VE ÖRÜNTÜ RAPORU ===")
-    print(f"\n[1] 1/2 veya 2/1 Biten Ters Maçlar ({len(uyn_12_21)} adet):")
-    for m in uyn_12_21[:5]: print(f" -> {m}") # Kota/Görünüm şişmesin diye ilk 5'i listeler
+    print(f"\n 1/2 veya 2/1 Biten Ters Maçlar ({len(uyn_12_21)} adet):")
+    for m in uyn_12_21[:10]: print(f" -> {m}")
     
-    print(f"\n[2] 7+ Gol Biten Maçlar ({len(uyn_7plus)} adet):")
-    for m in uyn_7plus[:5]: print(f" -> {m}")
+    print(f"\n 7+ Gol Biten Maçlar ({len(uyn_7plus)} adet):")
+    for m in uyn_7plus[:10]: print(f" -> {m}")
     
-    print(f"\n[3] 3-3 Biten Maçlar ({len(uyn_33)} adet):")
-    for m in uyn_33[:5]: print(f" -> {m}")
+    print(f"\n 3-3 Biten Maçlar ({len(uyn_33)} adet):")
+    for m in uyn_33[:10]: print(f" -> {m}")
     
-    print(f"\n[4] Son 2 Maçında Kırmızı Kartlı Seri Yakalayan Takımlar:")
+    print(f"\n Son 2 Maçında Kırmızı Kartlı Seri Yakalayan Takımlar:")
     print(f" -> {list(set(uyn_ozel_kirmizi)) if uyn_ozel_kirmizi else 'Bulunamadı.'}")
     
-    print("\n[5] YAPAY ZEKA GELECEK MAÇ MODEL TESTİ")
+    print("\n YAPAY ZEKA GELECEK MAÇ MODEL TESTİ")
     try:
         ornek_mac = pd.DataFrame([{'takim_kod': df['takim_kod'].iloc[-1], 'rakip_kod': df['rakip_kod'].iloc[-1], 'is_33': 0, 'is_7plus': 0, 'kirmizi_kart_var_mi': 1}])
-        probs = model.predict_proba(ornek_mac)[0]
+        probs = model.predict_proba(ornek_mac)
         classes = model.classes_
         print(f"Maç Simülasyonu: {df['takim'].iloc[-1]} vs {df['rakip'].iloc[-1]}")
         for c, p in zip(classes, probs):
@@ -142,9 +129,14 @@ def yapay_zeka_ve_oruntu_motoru(df):
     print("==========================================\n")
 
 if __name__ == "__main__":
-    if os.path.exists("mac_verileri.csv"):
-        ana_veri = pd.read_csv("mac_verileri.csv")
+    dosyalar = ["sezon22_23.csv", "sezon23_24.csv", "sezon24_25.csv"]
+    mevcut_dosyalar = [f for f in dosyalar if os.path.exists(f)]
+    
+    if mevcut_dosyalar:
+        print(f"Algılanan sezon dosyaları otomatik birleştiriliyor: {mevcut_dosyalar}")
+        # Tüm dosyaları oku ve alt alta yapıştır
+        bilesik_df = pd.concat([pd.read_csv(f) for f in mevcut_dosyalar], ignore_index=True)
         guncel_verileri_cek()
-        yapay_zeka_ve_oruntu_motoru(ana_veri)
+        yapay_zeka_ve_oruntu_motoru(bilesik_df)
     else:
-        print("Lütfen 'mac_verileri.csv' dosyasını yükleyin.")
+        print("Lütfen depoya en az bir adet sezon dosyası (Örn: 'sezon24_25.csv') yükleyin.")
