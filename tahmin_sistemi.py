@@ -1,80 +1,87 @@
 import os
-import urllib3
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 import requests
 import pandas as pd
+import numpy as np
 from datetime import datetime, timedelta
+import urllib3
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.preprocessing import LabelEncoder
 
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+# Zaman Damgası (Her cuma Actions diff yakalasın diye)
 print("==========================================================")
 print(f"RAPOR GÜNCELLEME ZAMANI: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 print("==========================================================")
 
-# 1. API Ayarları ve Veri Çekme
-API_TOKEN = os.getenv("FOOTBALL_DATA_TOKEN")  # GitHub Secrets'tan güvenli bir şekilde alınacak
+API_TOKEN = os.getenv("FOOTBALL_DATA_TOKEN")
 HEADERS = {"X-Auth-Token": API_TOKEN}
 BASE_URL = "https://football-data.org"
 
 def guncel_verileri_cek():
     print("Football-Data.org API'sinden güncel maçlar çekiliyor...")
-    # Türkiye Süper Lig (TSL) lig kodu genellikle 'TR' veya belirli bir ID'dir (Örn: 2011 veya lig araması ile bulunur)
-    # Kolaylık ve kota dostu olması açısından sistem son 3 yılın veritabanını (mac_verileri.csv) yerel olarak okur,
-    # Cuma sabahları ise sadece son 7 günde oynanan yeni TSL ve Avrupa maçlarını çekip veritabanına ekler.
-    
-    # NOT: Ücretsiz planda canlı maç limitleri olduğu için mevcut yerel verinizin üzerine 
-    # yeni haftanın maçlarını ekleyecek mekanizma aşağıda simüle edilmiştir.
     try:
-        # Örnek: Son 7 günün maçlarını çek
         tarih_beri = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
         url = f"{BASE_URL}/matches?dateFrom={tarih_beri}&dateTo={datetime.now().strftime('%Y-%m-%d')}"
         response = requests.get(url, headers=HEADERS, verify=False)
         if response.status_code == 200:
             print("Son haftanın maç verileri başarıyla çekildi.")
             return response.json()
-        else:
-            print(f"API Hatası: {response.status_code}")
-            return None
+        return None
     except Exception as e:
-        print(f"Bağlantı hatası: {e}")
+        print(f"API Bağlantı es geçildi (SSL/Kota): {e}")
         return None
 
-# 2. Örüntü Filtreleme Algoritması
-def oruntuleri_filtrele(df):
-    if df.empty:
-        print("Analiz edilecek veri bulunamadı.")
-        return
-        
-    df['toplam_gol'] = df['ev_gol'] + df['dep_gol']
-    df['tarih'] = pd.to_datetime(df['tarih'])
-    df = df.sort_values(by='tarih')
+def yapay_zeka_ve_oruntu_motoru(df):
+    # Football-Data.co.uk formatındaki kolonları standartlaştırıyoruz
+    # Orijinal kolonlar: Date, HomeTeam, AwayTeam, FTHG, FTAG, HTHG, HTAG, HR, AR
     
+    # Eksik kolon kontrolü ve temizliği
+    df = df.dropna(subset=['Date', 'HomeTeam', 'AwayTeam', 'FTHG', 'FTAG'])
+    
+    df['tarih'] = pd.to_datetime(df['Date'], errors='coerce', dayfirst=True)
+    df['takim'] = df['HomeTeam'].astype(str).str.strip()
+    df['rakip'] = df['AwayTeam'].astype(str).str.strip()
+    df['ev_gol'] = df['FTHG'].astype(int)
+    df['dep_gol'] = df['FTAG'].astype(int)
+    
+    # Kırmızı Kartları birleştir (HR: Home Red, AR: Away Red)
+    df['kirmizi_kart_sayisi'] = df['HR'].fillna(0).astype(int) + df['AR'].fillna(0).astype(int)
+    df['toplam_gol'] = df['ev_gol'] + df['dep_gol']
+    
+    # 1. ÖRÜNTÜ TARAMALARI (İstediğiniz Özel Kurallar)
     uyn_12_21 = []
     uyn_7plus = []
     uyn_33 = []
     uyn_ozel_kirmizi = []
     
-    # Maç Bazlı Taramalar (1/2, 2/1, 7+, 3-3)
+    df = df.sort_values(by='tarih')
+    
     for idx, row in df.iterrows():
-        # 1/2 ve 2/1 kontrolü
-        iy_ev, iy_dep = map(int, str(row['iy_skor']).split('-')) if '-' in str(row['iy_skor']) else (0,0)
-        ms_ev, ms_dep = row['ev_gol'], row['dep_gol']
-        
-        if (iy_ev > iy_dep and ms_ev < ms_dep) or (iy_ev < iy_dep and ms_ev > ms_dep):
-            uyn_12_21.append(row)
-            
+        # 1/2 veya 2/1 kontrolü (HTHG ve HTAG kolonları varsa)
+        if 'HTHG' in df.columns and 'HTAG' in df.columns:
+            try:
+                iy_ev = int(row['HTHG'])
+                iy_dep = int(row['HTAG'])
+                ms_ev = row['ev_gol']
+                ms_dep = row['dep_gol']
+                if (iy_ev > iy_dep and ms_ev < ms_dep) or (iy_ev < iy_dep and ms_ev > ms_dep):
+                    uyn_12_21.append(f"{row['Date']} | {row['takim']} - {row['rakip']} ({iy_ev}-{iy_dep} / {ms_ev}-{ms_dep})")
+            except:
+                pass
+                
         # 7+ Gol Kontrolü
         if row['toplam_gol'] >= 7:
-            uyn_7plus.append(row)
+            uyn_7plus.append(f"{row['Date']} | {row['takim']} {row['ev_gol']}-{row['dep_gol']} {row['rakip']}")
             
         # 3-3 Skor Kontrolü
-        if ms_ev == 3 and ms_dep == 3:
-            uyn_33.append(row)
+        if row['ev_gol'] == 3 and row['dep_gol'] == 3:
+            uyn_33.append(f"{row['Date']} | {row['takim']} vs {row['rakip']}")
             
-    # Takım Bazlı Son 2 Maç Kontrolü (1-1, 1-0, 2-0 + Kırmızı Kart)
+    # Takım Bazlı Son 2 Maç Kırmızı Kart + Kritik Skor Serisi
     tum_takimlar = set(df['takim'].unique()).union(set(df['rakip'].unique()))
-    
     for takim in tum_takimlar:
         takim_maclari = df[(df['takim'] == takim) | (df['rakip'] == takim)].tail(2)
-        
         if len(takim_maclari) == 2:
             uygun_mac_sayisi = 0
             for _, mac in takim_maclari.iterrows():
@@ -84,28 +91,60 @@ def oruntuleri_filtrele(df):
                                (g_ev == 0 and g_dep == 1) or \
                                (g_ev == 2 and g_dep == 0) or \
                                (g_ev == 0 and g_dep == 2)
-                               
                 kirmizi_var_mi = mac['kirmizi_kart_sayisi'] > 0
                 if gecerli_skor and kirmizi_var_mi:
                     uygun_mac_sayisi += 1
-            
             if uygun_mac_sayisi == 2:
                 uyn_ozel_kirmizi.append(takim)
 
-    # Sonuçları Rapor Olarak Yazdır
+    # 2. YAPAY ZEKA TAHMİN MOTORU (Random Forest)
+    df['mac_sonucu'] = np.where(df['ev_gol'] > df['dep_gol'], '1', 
+                        np.where(df['ev_gol'] == df['dep_gol'], 'X', '2'))
+    
+    df['is_33'] = np.where((df['ev_gol'] == 3) & (df['dep_gol'] == 3), 1, 0)
+    df['is_7plus'] = np.where(df['toplam_gol'] >= 7, 1, 0)
+    df['kirmizi_kart_var_mi'] = np.where(df['kirmizi_kart_sayisi'] > 0, 1, 0)
+    
+    le_takim = LabelEncoder()
+    df['takim_kod'] = le_takim.fit_transform(df['takim'])
+    df['rakip_kod'] = le_takim.fit_transform(df['rakip'])
+    
+    X = df[['takim_kod', 'rakip_kod', 'is_33', 'is_7plus', 'kirmizi_kart_var_mi']]
+    y = df['mac_sonucu']
+    
+    model = RandomForestClassifier(n_estimators=100, random_state=42)
+    model.fit(X, y)
+    
+    # ÇIKTI VE RAPORLAMA
     print("\n=== CUMA ÖĞLEN TAHMİN VE ÖRÜNTÜ RAPORU ===")
-    print(f"1/2 veya 2/1 Biten Maç Sayısı: {len(uyn_12_21)}")
-    print(f"7+ Gol Biten Maç Sayısı: {len(uyn_7plus)}")
-    print(f"3-3 Biten Maç Sayısı: {len(uyn_33)}")
-    print(f"Son 2 Maçında Kırmızı Kartlı Seri Yakalayan Takımlar: {list(set(uyn_ozel_kirmizi))}")
+    print(f"\n[1] 1/2 veya 2/1 Biten Ters Maçlar ({len(uyn_12_21)} adet):")
+    for m in uyn_12_21[:5]: print(f" -> {m}") # Kota/Görünüm şişmesin diye ilk 5'i listeler
+    
+    print(f"\n[2] 7+ Gol Biten Maçlar ({len(uyn_7plus)} adet):")
+    for m in uyn_7plus[:5]: print(f" -> {m}")
+    
+    print(f"\n[3] 3-3 Biten Maçlar ({len(uyn_33)} adet):")
+    for m in uyn_33[:5]: print(f" -> {m}")
+    
+    print(f"\n[4] Son 2 Maçında Kırmızı Kartlı Seri Yakalayan Takımlar:")
+    print(f" -> {list(set(uyn_ozel_kirmizi)) if uyn_ozel_kirmizi else 'Bulunamadı.'}")
+    
+    print("\n[5] YAPAY ZEKA GELECEK MAÇ MODEL TESTİ")
+    try:
+        ornek_mac = pd.DataFrame([{'takim_kod': df['takim_kod'].iloc[-1], 'rakip_kod': df['rakip_kod'].iloc[-1], 'is_33': 0, 'is_7plus': 0, 'kirmizi_kart_var_mi': 1}])
+        probs = model.predict_proba(ornek_mac)[0]
+        classes = model.classes_
+        print(f"Maç Simülasyonu: {df['takim'].iloc[-1]} vs {df['rakip'].iloc[-1]}")
+        for c, p in zip(classes, probs):
+            print(f" -> Sonuç {c} Olma Olasılığı: %{p*100:.2f}")
+    except Exception as e:
+        print(f"Tahmin simülasyon hatası: {e}")
     print("==========================================\n")
 
 if __name__ == "__main__":
-    # Test veya gerçek çalıştırma için yerel veri setinizi yükleyin
-    # Projenizin çalışması için ana dizinde 'mac_verileri.csv' adında bir dosya olmalıdır.
     if os.path.exists("mac_verileri.csv"):
         ana_veri = pd.read_csv("mac_verileri.csv")
-        guncel_verileri_cek()  # Haftalık yeni verileri çekmeyi dener
-        oruntuleri_filtrele(ana_veri)
+        guncel_verileri_cek()
+        yapay_zeka_ve_oruntu_motoru(ana_veri)
     else:
-        print("Lütfen ilk etapta son 3 yılın geçmiş verilerini içeren 'mac_verileri.csv' dosyasını yükleyin.")
+        print("Lütfen 'mac_verileri.csv' dosyasını yükleyin.")
