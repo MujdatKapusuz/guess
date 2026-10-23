@@ -1,11 +1,12 @@
-
 name: Cuma Sabahı Maç Güncelleme ve Analiz Döngüsü
 
 on:
   schedule:
-    # Her Cuma günü UTC saatiyle 06:00'da çalışır (Türkiye Saati ile tam 09:00 eder)
     - cron: '0 6 * * 5'
-  workflow_dispatch: # İstediğiniz an GitHub panelinden elle de başlatabilmeniz için
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -29,12 +30,12 @@ jobs:
       env:
         FOOTBALL_DATA_TOKEN: ${{ secrets.FOOTBALL_DATA_TOKEN }}
       run: |
-        python tahmin_sistemi.py
-        # Mevcut kodun en altına, 'Tahmin Motorunu Çalıştır' adımından hemen sonra ekleyin:
-    - name: Raporu Depoya Kaydet ve Yukle
-      run: |
-        git config --global user.name 'GitHub Action'
-        git config --global user.email 'action@github.com'
-        git add .
-        git diff --quiet && git diff --staged --quiet || git commit -m "Haftalık tahmin raporu güncellendi"
-        git push
+        python tahmin_sistemi.py > haftalik_rapor.txt
+        cat haftalik_rapor.txt
+
+    # GÜVENLİ VE KESİN KAYIT ADIMI
+    - name: Raporu Depoya Yukle
+      uses: stefanzweifel/git-auto-commit-action@v4
+      with:
+        commit_message: "Haftalık tahmin raporu güncellendi [skip ci]"
+        file_pattern: 'haftalik_rapor.txt'
