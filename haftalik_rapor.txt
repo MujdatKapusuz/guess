@@ -1,5 +1,5 @@
 ==========================================================
-RAPOR GÜNCELLEME ZAMANI: 2026-11-13 13:51:45
+RAPOR GÜNCELLEME ZAMANI: 2026-11-20 14:50:15
 ==========================================================
 Algılanan çift uzantılı sezon dosyaları otomatik birleştiriliyor: ['sezon23_24.csv.csv', 'sezon24_25.csv.csv', 'sezon25_26.csv.csv']
 Football-Data.org API'sinden güncel maçlar çekiliyor...
